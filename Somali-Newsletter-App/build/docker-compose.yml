@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    container_name: somali_newsletter_app_postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: somali_newsletter_app
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d  # Mount the init.sql script
+    networks:
+      - somali_newsletter_app_network
+
+  app:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    container_name: somali_newsletter_app
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: somali_newsletter_app
+      DB_SSLMODE: disable
+    volumes:
+      - ../pkg/config/.env:/app/.env
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    networks:
+      - somali_newsletter_app_network
+    command: ["./somali_newsletter_app"]
+
+volumes:
+  postgres_data:
+
+networks:
+  somali_newsletter_app_network:
+    driver: bridge

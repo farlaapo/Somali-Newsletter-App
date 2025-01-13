@@ -1,0 +1,38 @@
+# Stage 1: Build the Go application
+FROM golang:1.21-alpine AS builder  
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy Go modules files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the entire project source code into the container
+COPY . .
+
+# Build the Go application
+RUN go build -o somali-newsletter-app ./cmd/server
+
+# Verify the binary exists (for debugging)
+RUN ls -l /app/somali-newsletter-app
+
+# Stage 2: Create a lightweight container to run the application
+FROM alpine:latest
+
+# Install necessary libraries for running Go applications
+RUN apk --no-cache add ca-certificates
+
+# Set the working directory inside the final container
+WORKDIR /root
+
+# Copy the built application from the `builder` stage
+COPY --from=builder /app/somali-newsletter-app .
+
+# Expose port 8000 to the outside world
+EXPOSE 8000
+
+# Command to run the application
+CMD ["./somali-newsletter-app"]
